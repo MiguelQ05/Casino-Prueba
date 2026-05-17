@@ -12,6 +12,7 @@ const games = [
   { id: 'slots', name: 'Tragaperras (Slots)', keywords: ['tragaperras', 'slots', 'slot', 'traga'] },
   { id: 'blackjack', name: 'Blackjack VIP', keywords: ['blackjack', 'jack', 'black'] },
   { id: 'horses', name: 'Carrera de Caballos', keywords: ['caballos', 'horses', 'carrera'] },
+  { id: 'plinko', name: 'Plinko Board', keywords: ['plinko', 'ball', 'bolas', 'caida'] },
 ]
 
 const filteredSuggestions = computed(() => {

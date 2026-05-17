@@ -6,6 +6,7 @@ import CasinoRoulette from './components/CasinoRoulette.vue'
 import SlotMachine from './components/SlotMachine.vue'
 import Blackjack from './components/Blackjack.vue'
 import HorseRace from './components/HorseRace.vue'
+import Plinko from './components/Plinko.vue'
 
 const currentView = ref('roulette')
 const isSidebarCollapsed = ref(false)
@@ -38,6 +39,7 @@ const toggleSidebar = () => {
             <SlotMachine v-else-if="currentView === 'slots'" />
             <Blackjack v-else-if="currentView === 'blackjack'" />
             <HorseRace v-else-if="currentView === 'horses'" />
+            <Plinko v-else-if="currentView === 'plinko'" />
           </div>
         </div>
       </main>

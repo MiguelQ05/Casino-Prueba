@@ -28,6 +28,10 @@ defineEmits(['navigate', 'toggle-sidebar'])
           <span class="nav-icon">🏇</span>
           <span class="nav-text">Carrera caballos</span>
         </a>
+        <a href="#" class="nav-item" :class="{ active: activeView === 'plinko' }" @click.prevent="$emit('navigate', 'plinko')" title="Plinko">
+          <span class="nav-icon">🎯</span>
+          <span class="nav-text">Plinko</span>
+        </a>
       </div>
     </nav>
 
