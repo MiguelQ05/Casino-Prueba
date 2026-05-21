@@ -29,11 +29,6 @@
               @input="clampBet"
             />
           </div>
-          <div class="pk-bet-chips">
-            <button v-for="m in [0.5, 2, 5, 10]" :key="m" class="chip-btn" @click="multiplyBet(m)">
-              {{ m >= 1 ? '+' + m + 'x' : '½' }}
-            </button>
-          </div>
         </div>
 
         <!-- RISK MODE -->
@@ -76,29 +71,13 @@
           <div class="pk-range-labels"><span>1</span><span>5</span></div>
         </div>
 
-        <!-- AUTOBET -->
-        <div class="pk-section">
-          <div class="pk-toggle-row">
-            <span class="pk-label" style="margin:0">AUTO BET</span>
-            <div class="pk-toggle" :class="{ on: autoBet }" @click="toggleAuto">
-              <div class="pk-toggle-thumb"></div>
-            </div>
-          </div>
-          <div v-if="autoBet" class="pk-auto-config">
-            <label class="pk-label-sm">BETS REMAINING</label>
-            <input type="number" class="pk-input pk-input-sm" v-model.number="autoCount" min="1" max="999" />
-          </div>
-        </div>
-
         <!-- DROP BUTTON -->
         <button
           class="pk-drop-btn"
-          :class="{ 'btn-pulsing': autoBet && isDropping }"
-          :disabled="betAmount <= 0 || betAmount > balance || isDropping && !autoBet"
+          :disabled="betAmount <= 0 || betAmount > balance || isDropping"
           @click="dropBalls"
         >
-          <span v-if="!isDropping || !autoBet">🎯 DROP BALL{{ ballCount > 1 ? 'S' : '' }}</span>
-          <span v-else>⟳ AUTO {{ autoRemaining }} LEFT</span>
+          <span>🎯 DROP BALL{{ ballCount > 1 ? 'S' : '' }}</span>
         </button>
 
         <!-- HISTORY -->
@@ -185,37 +164,37 @@ async function loadMatter() {
 /** Multiplicadores por modo de riesgo y número de filas */
 const MULTIPLIERS = {
   low: {
-    8:  [5.6, 2.1, 1.1, 1.0, 0.5, 1.0, 1.1, 2.1, 5.6],
-    9:  [5.6, 2.0, 1.6, 1.0, 0.7, 0.7, 1.0, 1.6, 2.0, 5.6],
-    10: [8.9, 3.0, 1.4, 1.1, 1.0, 0.5, 1.0, 1.1, 1.4, 3.0, 8.9],
-    11: [8.4, 3.0, 1.9, 1.3, 1.0, 0.7, 0.7, 1.0, 1.3, 1.9, 3.0, 8.4],
-    12: [10,  3.0, 1.6, 1.4, 1.1, 1.0, 0.5, 1.0, 1.1, 1.4, 1.6, 3.0, 10],
-    13: [8.1, 4.0, 3.0, 1.9, 1.2, 0.9, 0.7, 0.7, 0.9, 1.2, 1.9, 3.0, 4.0, 8.1],
-    14: [7.1, 4.0, 1.9, 1.4, 1.3, 1.1, 1.0, 0.5, 1.0, 1.1, 1.3, 1.4, 1.9, 4.0, 7.1],
-    15: [15,  8.0, 3.0, 2.0, 1.5, 1.1, 1.0, 0.7, 0.7, 1.0, 1.1, 1.5, 2.0, 3.0, 8.0, 15],
-    16: [16,  9.0, 2.0, 1.4, 1.4, 1.2, 1.1, 1.0, 0.5, 1.0, 1.1, 1.2, 1.4, 1.4, 2.0, 9.0, 16],
+    8:  [5.6, 1.6, 1.1, 0.9, 0.5, 0.9, 1.1, 1.6, 5.6],
+    9:  [5.6, 1.8, 1.3, 0.9, 0.7, 0.7, 0.9, 1.3, 1.8, 5.6],
+    10: [8.9, 2.5, 1.5, 1.0, 0.7, 0.5, 0.7, 1.0, 1.5, 2.5, 8.9],
+    11: [8.4, 3.0, 1.7, 1.1, 0.8, 0.6, 0.6, 0.8, 1.1, 1.7, 3.0, 8.4],
+    12: [10,  3.0, 1.6, 1.1, 0.9, 0.6, 0.5, 0.6, 0.9, 1.1, 1.6, 3.0, 10],
+    13: [8.1, 4.0, 2.5, 1.5, 1.0, 0.8, 0.6, 0.6, 0.8, 1.0, 1.5, 2.5, 4.0, 8.1],
+    14: [7.1, 4.0, 2.5, 1.5, 1.1, 0.9, 0.7, 0.5, 0.7, 0.9, 1.1, 1.5, 2.5, 4.0, 7.1],
+    15: [15,  6.0, 3.0, 2.0, 1.3, 1.0, 0.7, 0.6, 0.6, 0.7, 1.0, 1.3, 2.0, 3.0, 6.0, 15],
+    16: [16,  7.0, 4.0, 2.0, 1.4, 1.1, 0.9, 0.6, 0.5, 0.6, 0.9, 1.1, 1.4, 2.0, 4.0, 7.0, 16],
   },
   medium: {
-    8:  [13, 3.0, 1.3, 0.7, 0.4, 0.7, 1.3, 3.0, 13],
-    9:  [18, 4.0, 1.7, 0.9, 0.5, 0.5, 0.9, 1.7, 4.0, 18],
-    10: [22, 5.0, 2.0, 1.4, 0.6, 0.4, 0.6, 1.4, 2.0, 5.0, 22],
-    11: [24, 6.0, 3.0, 1.8, 0.7, 0.5, 0.5, 0.7, 1.8, 3.0, 6.0, 24],
-    12: [33, 11, 4.0, 2.0, 1.1, 0.6, 0.3, 0.6, 1.1, 2.0, 4.0, 11, 33],
-    13: [43, 13, 6.0, 3.0, 1.3, 0.7, 0.4, 0.4, 0.7, 1.3, 3.0, 6.0, 13, 43],
-    14: [58, 15, 7.0, 4.0, 1.9, 1.0, 0.5, 0.2, 0.5, 1.0, 1.9, 4.0, 7.0, 15, 58],
-    15: [88, 18, 11, 5.0, 2.0, 1.0, 0.5, 0.3, 0.3, 0.5, 1.0, 2.0, 5.0, 11, 18, 88],
-    16: [110,41, 10, 5.0, 3.0, 1.5, 1.0, 0.5, 0.3, 0.5, 1.0, 1.5, 3.0, 5.0, 10, 41, 110],
+    8:  [13, 2.5, 1.1, 0.5, 0.3, 0.5, 1.1, 2.5, 13],
+    9:  [18, 4.0, 1.5, 0.6, 0.3, 0.3, 0.6, 1.5, 4.0, 18],
+    10: [22, 5.0, 1.8, 0.9, 0.5, 0.2, 0.5, 0.9, 1.8, 5.0, 22],
+    11: [24, 6.0, 2.5, 1.4, 0.7, 0.3, 0.3, 0.7, 1.4, 2.5, 6.0, 24],
+    12: [33, 10,  3.5, 1.6, 0.9, 0.4, 0.2, 0.4, 0.9, 1.6, 3.5, 10, 33],
+    13: [43, 11,  4.5, 2.0, 1.1, 0.6, 0.3, 0.3, 0.6, 1.1, 2.0, 4.5, 11, 43],
+    14: [58, 12,  5.0, 2.5, 1.3, 0.8, 0.4, 0.2, 0.4, 0.8, 1.3, 2.5, 5.0, 12, 58],
+    15: [88, 15,  8.0, 3.0, 1.5, 0.9, 0.5, 0.2, 0.2, 0.5, 0.9, 1.5, 3.0, 8.0, 15, 88],
+    16: [110,30,  9.0, 4.0, 2.0, 1.2, 0.7, 0.3, 0.2, 0.3, 0.7, 1.2, 2.0, 4.0, 9.0, 30, 110],
   },
   high: {
-    8:  [29, 4.0, 1.5, 0.3, 0.2, 0.3, 1.5, 4.0, 29],
-    9:  [43, 7.0, 2.0, 0.6, 0.2, 0.2, 0.6, 2.0, 7.0, 43],
-    10: [76, 10, 3.0, 0.9, 0.3, 0.2, 0.3, 0.9, 3.0, 10, 76],
-    11: [120,14, 5.2, 1.4, 0.4, 0.2, 0.2, 0.4, 1.4, 5.2, 14, 120],
-    12: [170,24, 8.1, 2.0, 0.7, 0.2, 0.2, 0.2, 0.7, 2.0, 8.1, 24, 170],
-    13: [260,37, 11, 4.0, 1.0, 0.2, 0.2, 0.2, 0.2, 1.0, 4.0, 11, 37, 260],
-    14: [420,56, 18, 5.0, 1.9, 0.3, 0.2, 0.2, 0.3, 1.9, 5.0, 18, 56, 420],
-    15: [620,83, 27, 8.0, 3.0, 0.5, 0.2, 0.2, 0.2, 0.5, 3.0, 8.0, 27, 83, 620],
-    16: [1000,130,26,9.0,4.0, 2.0, 0.2, 0.2, 0.2, 0.2, 2.0, 4.0, 9.0, 26, 130,1000],
+    8:  [29, 4.0, 1.5, 0.2, 0.2, 0.2, 1.5, 4.0, 29],
+    9:  [43, 7.0, 2.0, 0.3, 0.2, 0.2, 0.3, 2.0, 7.0, 43],
+    10: [76, 10,  3.0, 0.5, 0.2, 0.2, 0.2, 0.5, 3.0, 10, 76],
+    11: [120,14,  4.0, 0.7, 0.2, 0.2, 0.2, 0.2, 0.7, 4.0, 14, 120],
+    12: [170,24,  6.0, 1.0, 0.2, 0.2, 0.2, 0.2, 0.2, 1.0, 6.0, 24, 170],
+    13: [260,37,  8.0, 1.5, 0.3, 0.2, 0.2, 0.2, 0.2, 0.3, 1.5, 8.0, 37, 260],
+    14: [420,56,  12,  2.0, 0.4, 0.2, 0.2, 0.2, 0.2, 0.2, 0.4, 2.0, 12,  56, 420],
+    15: [620,83,  18,  3.0, 0.5, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.5, 3.0, 18, 83, 620],
+    16: [1000,130,20,  5.0, 1.0, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2, 1.0, 5.0, 20, 130, 1000],
   }
 }
 
@@ -240,9 +219,6 @@ const betAmount   = ref(1.00)
 const risk        = ref('medium')
 const rows        = ref(12)
 const ballCount   = ref(1)
-const autoBet     = ref(false)
-const autoCount   = ref(10)
-const autoRemaining = ref(0)
 const isDropping  = ref(false)
 const balFlash    = ref(null)   // 'up' | 'down' | null
 const winFlash    = ref(null)   // { mult, amount, cls } | null
@@ -388,8 +364,8 @@ function buildBoard() {
         friction:    0.0,
         label:       'pin',
         render: {
-          fillStyle:   '#3a4a5c',
-          strokeStyle: '#5ae0ff',
+          fillStyle:   '#2c2419',
+          strokeStyle: '#c9a84c',
           lineWidth:   1.5,
         }
       })
@@ -414,7 +390,7 @@ function buildBoard() {
     restitution: 0.4,
     label: 'wall',
     render: {
-      fillStyle:   'rgba(58, 74, 92, 0.8)', // Color de los pines
+      fillStyle:   'rgba(44, 36, 25, 0.8)', // Color de los pines
       strokeStyle: '#c9a84c', // Brillo dorado LuxeBet para el contorno
       lineWidth:   2,
     }
@@ -554,11 +530,11 @@ function spawnBall(targetSlotHint = null) {
  * Devuelve el color de la bola según el nivel de riesgo.
  */
 function riskBallColor() {
-  return { low: '#4ee7b8', medium: '#f7b731', high: '#ff4757' }[risk.value]
+  return { low: '#c9a84c', medium: '#e67e22', high: '#e74c3c' }[risk.value]
 }
 
 function riskBallGlow() {
-  return { low: '#00ffa3', medium: '#ffd32a', high: '#ff6b81' }[risk.value]
+  return { low: '#f0d080', medium: '#ffd32a', high: '#ff7675' }[risk.value]
 }
 
 /**
@@ -644,17 +620,9 @@ function startLogicLoop() {
     }
     activeBalls = activeBalls.filter(b => !toRemove.includes(b))
 
-    // Si todas las bolas resolvieron y hay auto-bet activo
+    // Si todas las bolas resolvieron
     if (activeBalls.length === 0 && isDropping.value) {
       isDropping.value = false
-      if (autoBet.value && autoRemaining.value > 0) {
-        autoRemaining.value--
-        if (autoRemaining.value > 0) {
-          setTimeout(dropBalls, 300)
-        } else {
-          autoBet.value = false
-        }
-      }
     }
   }
   rafId = requestAnimationFrame(tick)
@@ -668,11 +636,6 @@ async function dropBalls() {
   if (betAmount.value <= 0) return
   const totalCost = betAmount.value * ballCount.value
   if (totalCost > balance.value) return
-
-  // Si es el primer drop de una secuencia auto
-  if (autoBet.value && autoRemaining.value === 0) {
-    autoRemaining.value = autoCount.value
-  }
 
   balance.value = +(balance.value - totalCost).toFixed(2)
   isDropping.value = true
@@ -731,10 +694,7 @@ function multiplyBet(m) {
   else       betAmount.value = Math.min(+(betAmount.value * m).toFixed(2), balance.value)
 }
 
-function toggleAuto() {
-  autoBet.value = !autoBet.value
-  if (!autoBet.value) autoRemaining.value = 0
-}
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 //  RESIZE HANDLER
@@ -784,16 +744,18 @@ onUnmounted(() => {
 
 .plinko-app {
   --bg:           transparent;
-  --bg-panel:     rgba(15, 15, 15, 0.6);
-  --bg-card:      rgba(30, 30, 30, 0.45);
-  --border:       rgba(255, 255, 255, 0.08);
+  --bg-panel:     rgba(10, 10, 10, 0.65);
+  --bg-card:      rgba(26, 26, 26, 0.6);
+  --border:       rgba(201, 168, 76, 0.15); /* Soft gold-tinted borders */
   --gold:         #c9a84c; /* LuxeBet Gold */
-  --neon-cyan:    #5ae0ff;
-  --neon-green:   #4ee7b8;
-  --neon-red:     #ff4757;
-  --neon-purple:  #a55eea;
+  --gold-light:   #f0d080;
+  --gold-dark:    #8a6a20;
+  --neon-cyan:    #f0d080; /* Mapped to gold-light */
+  --neon-green:   #2ecc71; /* Emerald/win green */
+  --neon-red:     #e74c3c; /* Luxe Red */
+  --neon-purple:  #80001a; /* Crimson Red */
   --text:         #e6edf3;
-  --text-muted:   #aaa;
+  --text-muted:   #a0a0a0;
   --radius:       12px;
 
   background:     transparent;
@@ -840,7 +802,7 @@ onUnmounted(() => {
 
 @keyframes logoPulse {
   0%,100% { box-shadow: 0 0 8px var(--neon-cyan), 0 0 16px var(--neon-cyan); }
-  50%     { box-shadow: 0 0 16px var(--neon-cyan), 0 0 32px var(--neon-cyan), 0 0 48px rgba(90,224,255,0.3); }
+  50%     { box-shadow: 0 0 16px var(--neon-cyan), 0 0 32px var(--neon-cyan), 0 0 48px rgba(240,208,128,0.3); }
 }
 
 .logo-text {
@@ -848,7 +810,7 @@ onUnmounted(() => {
   font-size:       1.3rem;
   font-weight:     800;
   letter-spacing:  0.25em;
-  background:      linear-gradient(90deg, var(--neon-cyan), var(--neon-green));
+  background:      linear-gradient(90deg, var(--gold-light), var(--gold));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -1023,9 +985,9 @@ onUnmounted(() => {
 }
 .risk-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 
-.risk-btn.risk-low.active  { border-color: var(--neon-green); color: var(--neon-green); background: rgba(78,231,184,0.1); box-shadow: 0 0 10px rgba(78,231,184,0.2); }
-.risk-btn.risk-medium.active { border-color: var(--gold); color: var(--gold); background: rgba(247,183,49,0.1); box-shadow: 0 0 10px rgba(247,183,49,0.2); }
-.risk-btn.risk-high.active { border-color: var(--neon-red); color: var(--neon-red); background: rgba(255,71,87,0.1); box-shadow: 0 0 10px rgba(255,71,87,0.2); }
+.risk-btn.risk-low.active  { border-color: var(--gold); color: var(--gold); background: rgba(201,168,76,0.1); box-shadow: 0 0 10px rgba(201,168,76,0.2); }
+.risk-btn.risk-medium.active { border-color: #e67e22; color: #e67e22; background: rgba(230,126,34,0.1); box-shadow: 0 0 10px rgba(230,126,34,0.2); }
+.risk-btn.risk-high.active { border-color: var(--neon-red); color: var(--neon-red); background: rgba(231,76,60,0.1); box-shadow: 0 0 10px rgba(231,76,60,0.2); }
 
 /* Range slider */
 .pk-range {
@@ -1104,7 +1066,7 @@ onUnmounted(() => {
 .pk-drop-btn {
   width:          100%;
   padding:        13px;
-  background:     linear-gradient(135deg, var(--neon-cyan), #3a8fdd);
+  background:     linear-gradient(135deg, var(--gold-light), var(--gold));
   border:         none;
   border-radius:  var(--radius);
   color:          #0d1117;
@@ -1114,7 +1076,7 @@ onUnmounted(() => {
   letter-spacing: 0.1em;
   cursor:         pointer;
   transition:     all 0.2s;
-  box-shadow:     0 4px 20px rgba(90,224,255,0.3);
+  box-shadow:     0 4px 20px rgba(201, 168, 76, 0.3);
   position:       relative;
   overflow:       hidden;
 }
@@ -1126,19 +1088,12 @@ onUnmounted(() => {
 }
 .pk-drop-btn:hover:not(:disabled) {
   transform:  translateY(-2px);
-  box-shadow: 0 8px 30px rgba(90,224,255,0.5);
+  box-shadow: 0 8px 30px rgba(201, 168, 76, 0.5);
 }
 .pk-drop-btn:disabled {
   opacity:    0.4;
   cursor:     not-allowed;
   transform:  none;
-}
-.pk-drop-btn.btn-pulsing {
-  animation: btnPulse 1.2s ease-in-out infinite;
-}
-@keyframes btnPulse {
-  0%,100% { box-shadow: 0 4px 20px rgba(90,224,255,0.3); }
-  50%     { box-shadow: 0 4px 40px rgba(90,224,255,0.8); }
 }
 
 /* HISTORY */
@@ -1166,10 +1121,10 @@ onUnmounted(() => {
   transition:      all 0.2s;
 }
 
-.hist-mega { border-color: rgba(247,183,49,0.4); background: rgba(247,183,49,0.05); }
-.hist-win  { border-color: rgba(78,231,184,0.3); }
-.hist-even { border-color: rgba(90,224,255,0.2); }
-.hist-lose { border-color: rgba(255,71,87,0.2); }
+.hist-mega { border-color: rgba(240, 208, 128, 0.4); background: rgba(240, 208, 128, 0.05); }
+.hist-win  { border-color: rgba(230, 126, 34, 0.3); background: rgba(230, 126, 34, 0.05); }
+.hist-even { border-color: rgba(201, 168, 76, 0.25); background: rgba(201, 168, 76, 0.02); }
+.hist-lose { border-color: rgba(231, 76, 60, 0.25); background: rgba(231, 76, 60, 0.02); }
 
 .hist-mult { font-weight: 700; color: var(--text); }
 .hist-delta.pos { color: var(--neon-green); }
@@ -1186,7 +1141,7 @@ onUnmounted(() => {
   flex:       1;
   position:   relative;
   background:
-    radial-gradient(ellipse at 50% 30%, rgba(90,224,255,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 50% 30%, rgba(201, 168, 76, 0.06) 0%, transparent 60%),
     var(--bg);
   overflow:   hidden;
 }
@@ -1231,11 +1186,11 @@ onUnmounted(() => {
 }
 
 /* Colores de multiplicadores */
-.slot-mega { background: rgba(247,183,49,0.15); border-color: rgba(247,183,49,0.5); color: var(--gold); box-shadow: 0 0 12px rgba(247,183,49,0.3); }
-.slot-high { background: rgba(255,71,87,0.12);  border-color: rgba(255,71,87,0.4);  color: var(--neon-red);   box-shadow: 0 0 10px rgba(255,71,87,0.2); }
-.slot-mid  { background: rgba(90,224,255,0.10); border-color: rgba(90,224,255,0.35);color: var(--neon-cyan);  }
-.slot-low  { background: rgba(78,231,184,0.08); border-color: rgba(78,231,184,0.3); color: var(--neon-green); }
-.slot-base { background: rgba(255,255,255,0.04);border-color: rgba(255,255,255,0.1);color: var(--text-muted); }
+.slot-mega { background: rgba(240, 208, 128, 0.25); border-color: var(--gold-light); color: var(--gold-light); box-shadow: 0 0 12px rgba(240, 208, 128, 0.4); }
+.slot-high { background: rgba(230, 126, 34, 0.18);  border-color: #e67e22;  color: #ff9f43;   box-shadow: 0 0 10px rgba(230, 126, 34, 0.3); }
+.slot-mid  { background: rgba(201, 168, 76, 0.15); border-color: var(--gold); color: var(--gold);  }
+.slot-low  { background: rgba(138, 106, 32, 0.1); border-color: var(--gold-dark); color: #c9a84c; }
+.slot-base { background: rgba(231, 76, 60, 0.08); border-color: rgba(231, 76, 60, 0.2); color: rgba(231, 76, 60, 0.7); }
 
 /* Animación cuando una bola cae en el slot */
 .slot-hit {
@@ -1267,9 +1222,9 @@ onUnmounted(() => {
   backdrop-filter: blur(8px);
 }
 
-.flash-good  { background: rgba(90,224,255,0.15);  border-color: var(--neon-cyan);  box-shadow: 0 0 40px rgba(90,224,255,0.4); }
-.flash-big   { background: rgba(255,71,87,0.15);   border-color: var(--neon-red);   box-shadow: 0 0 50px rgba(255,71,87,0.5);  }
-.flash-mega  { background: rgba(247,183,49,0.2);   border-color: var(--gold);       box-shadow: 0 0 60px rgba(247,183,49,0.6); }
+.flash-good  { background: rgba(201, 168, 76, 0.15);  border-color: var(--gold);  box-shadow: 0 0 40px rgba(201, 168, 76, 0.4); }
+.flash-big   { background: rgba(230, 126, 34, 0.15);   border-color: #e67e22;   box-shadow: 0 0 50px rgba(230, 126, 34, 0.5);  }
+.flash-mega  { background: rgba(240, 208, 128, 0.2);   border-color: var(--gold-light);       box-shadow: 0 0 60px rgba(240, 208, 128, 0.6); }
 
 .wf-mult {
   font-family: 'Syne', sans-serif;
